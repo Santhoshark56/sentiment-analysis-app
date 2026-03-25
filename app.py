@@ -1,146 +1,159 @@
-
 import streamlit as st
 import joblib
 import re
 import nltk
 from nltk.corpus import stopwords
 
+# ------------------ PAGE CONFIG ------------------
+st.set_page_config(page_title="Emotion Analyzer", layout="centered")
 
-
-
+# ------------------ CSS ------------------
 st.markdown("""
 <style>
-html, body, [class*="css"]  {
-    font-family: 'Poppins', sans-serif;
-}
-</style>
-""", unsafe_allow_html=True)
-st.image("bgimg.jpg", width=120)
 
-
-st.markdown("""
-<h1 style='text-align: center; color: #ffffff;'>
-💬 Chat Emotion Analyzer
-</h1>
-<p style='text-align: center; font-size:18px;'>
-Analyze emotions from text instantly 🚀
-</p>
-""", unsafe_allow_html=True)
-    
-    
-st.markdown("""
-<style>
+/* Background gradient */
 .stApp {
-    background: linear-gradient(-45deg, 
-        #0000ff,   /* blue */
-        #8000ff,   /* purple */
-        #ff0000,   /* red */
-        #ff8c00,   /* orange */
-        #00ff7f    /* green */
-    );
+    background: linear-gradient(-45deg, #0000ff, #8000ff, #ff0000, #ff8c00, #00ff7f);
     background-size: 400% 400%;
     animation: gradientShift 20s ease infinite;
 }
 
+/* Gradient animation */
 @keyframes gradientShift {
     0% { background-position: 0% 50%; }
-    25% { background-position: 50% 100%; }
     50% { background-position: 100% 50%; }
-    75% { background-position: 50% 0%; }
     100% { background-position: 0% 50%; }
 }
-</style>
-""", unsafe_allow_html=True)  
 
-###############################################################33
-st.markdown("""
-<style>
+/* Glass card container */
+.main-container {
+    max-width: 600px;
+    margin: auto;
+    margin-top: 60px;
+    padding: 30px;
 
-/* Full textarea container (glass layer) */
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+}
+
+/* Text */
+h1, p, label {
+    color: white !important;
+    text-align: center;
+}
+
+/* Textarea glass */
 div[data-testid="stTextArea"] > div {
-    background: rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-
-    border-radius: 15px !important;
+    background: rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(15px);
+    border-radius: 12px !important;
     border: 1px solid rgba(255,255,255,0.2) !important;
     padding: 8px !important;
 }
 
-/* 🔥 Remove Streamlit grey background layer */
 div[data-testid="stTextArea"] > div > div {
     background: transparent !important;
 }
 
-/* Actual typing area */
 div[data-testid="stTextArea"] textarea {
     background: transparent !important;
     color: white !important;
     border: none !important;
 }
 
-/* Placeholder */
 div[data-testid="stTextArea"] textarea::placeholder {
     color: rgba(255,255,255,0.6);
 }
 
-/* Glow on focus */
-div[data-testid="stTextArea"]:focus-within {
-    border: 1px solid rgba(255,255,255,0.5) !important;
-    box-shadow: 0 0 25px rgba(255,255,255,0.25);
+/* Button */
+.stButton button {
+    width: 100%;
+    background: linear-gradient(45deg, #ff4b2b, #ff416c);
+    color: white;
+    border-radius: 12px;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    transition: 0.3s;
 }
 
-div[data-testid="stTextArea"] > div > div {
-    background: transparent !important;
+.stButton button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255,75,43,0.6);
 }
 
 </style>
 """, unsafe_allow_html=True)
-# st.markdown("""
-# <style>
-# .stApp {
-#     background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-# }
-# </style>
-# """, unsafe_allow_html=True) 
 
-       
-st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-# your components here
-st.markdown("</div>", unsafe_allow_html=True)
+# ------------------ UI START ------------------
+#st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
+st.markdown("<h1>💬 Chat Emotion Analyzer</h1>", unsafe_allow_html=True)
+st.markdown("<p>Analyze emotions from text instantly 🚀</p>", unsafe_allow_html=True)
 
-# Download stopwords if they aren't already on the system
+# ------------------ NLP SETUP ------------------
 nltk.download('stopwords', quiet=True)
 stop_words = set(stopwords.words('english'))
 
-# 1. Load the saved model and vectorizer
 model = joblib.load('model.pkl')
 vectorizer = joblib.load('vectorizer.pkl')
-# 2. Define the exact same cleaning function used during training
+
 def clean_text(text):
     text = str(text).lower()
     text = re.sub(r'[^a-zA-Z]', ' ', text)
-    words = text.split() 
+    words = text.split()
     words = [w for w in words if w not in stop_words]
     return ' '.join(words)
 
-# Create a text input area
+# ------------------ INPUT ------------------
 user_input = st.text_area("Enter your message here:", placeholder="I am feeling very happy today")
 
-# Create a button to trigger the prediction
+# ------------------ BUTTON ------------------
 if st.button("Analyze Emotion"):
+
     if user_input.strip() == "":
-        st.warning("Please enter some text to analyze.")
+        st.warning("Please enter some text.")
     else:
-        # Clean the input
-        cleaned_input = clean_text(user_input)
-        
-        # Vectorize the input
-        vectorized_input = vectorizer.transform([cleaned_input])
-        
-        # Predict the emotion
-        prediction = model.predict(vectorized_input)[0]
-        
-        # Display the output
-        st.success(f"**Output: Emotion - {prediction}**")
+        cleaned = clean_text(user_input)
+        vect = vectorizer.transform([cleaned])
+        prediction = model.predict(vect)[0]
+
+        # Emotion colors
+        emotion_colors = {
+            "happy": "#00ff9f",
+            "sad": "#4da6ff",
+            "angry": "#ff4d4d",
+            "fear": "#b366ff",
+            "love": "#ff66cc"
+        }
+
+        color = emotion_colors.get(prediction.lower(), "#ffffff")
+
+        # Chat-style UI
+        st.markdown(f"""
+        <div style="
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+        ">
+            <b>You:</b> {user_input}
+        </div>
+
+        <div style="
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 10px;
+            border-left: 5px solid {color};
+            box-shadow: 0 0 15px {color};
+        ">
+            <b>AI:</b> Emotion → {prediction}
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
